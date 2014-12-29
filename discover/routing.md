@@ -26,7 +26,104 @@ Meteor 預設就只有「模板」，你可以從模板中呼叫模板，所以�
 
 安裝了 Iron Router 之後，這套件把 Layout + Template 的模式帶了進來。先寫好一個預設的排版檔，在 `<body>` 裡擺一個 `{{> yield}}` 特殊標籤，路由器會自動根據路由的設定、替換成對應的模板。
 
+> 重點在於：原來你可以把一個模板當成排版檔使用，但無法動態替換模板；搭配了路由器的功能，才能讓排版檔真正發揮作用。
+
 ![Layouts and Templates](https://book.discovermeteor.com/images/diagrams/router-diagram@2x.png)
 
+一開始可以建立一個單獨的路由設定檔，頂端寫「預設設定」，後面則是不同的路由。
+
+```
+Router.configure({
+	layoutTemplate: 'layout'
+});
+
+Router.route('/', {
+	name: 'postsList'
+});
+```
+
+## 命名路由
+
+路由有一個預設尋找「對應模板」的機能，事實上如果你沒有賦予路由一個「明確的名稱」，它第一優先是根據設定的「路徑」去找（上面的範例就不適用，因為 `/` 沒有對應的模板存在）。因此主動替路由命名、並以路由名稱去設定相同名稱的模板，是個好習慣。
+
+命名路由還可以使用 `{{pathFor}}` 這個 helper，會回傳路由的網址。
+
+## 等候資料
+
+```
+Router.configure({
+	layoutTemplate: 'layout',
+	loadingTemplate: 'loading',
+	waitOn: function() {
+		return Meteor.subscribe('posts');
+	}
+});
+```
+
+路由的功能之一：掛鉤。這裏的 `waitOn` 就是個必定會用到的掛鉤：我們把之前寫在 `main.js` 裡面訂閱資料的代碼移到這裡，這個路由會確保訂閱的資料正確取到前端時才呈現出來。
+
+Iron Router 還內建提供了「等候載入」的模板設定，只要寫入模板名稱，就會先載入等候模板、等到資料準備妥當，把組好的版替換上去。
+
+```
+<template name="loading">
+	{{> spinner}}
+</template>
+```
+
+> 安裝額外套件 `meteor add sacha:spin`，就只需要呼叫 `{{> spinner}}` 模板，一切搞定。
+
+> 再次驗證「響應式編程」：我們讓路由在等候資料時，先顯示「載入中」的模板，但 Meteor 究竟如何判斷何時該把用戶導回正確的呈現模板？答案當然是「當資料準備妥當」，但我們卻根本沒有寫任何一行代碼來確定這件事，其實這就是「響應式編程」的概念（還記得試算表的例子嗎？）。
+
+## 路由至特定貼文
+
+你不可能替成千上百的內容分別指定路由，對動態資料來說，我們需要用到「動態路由」。
+
+我們先建一個給單獨內容的模板 `postPage`，再設定路由：
+
+```
+Router.route('/posts/:_id', {
+  name: 'postPage'
+});
+```
+
+特殊的 `:_id` 語法告訴路由器兩件事：
+
+1. 以 `/posts/xyz` 這樣的格式來滿足路由（任何資料都行）。
+2. 從路由的 `params` 陣列中找出 `_id` 這個屬性來匹配。
+
+注意：這裡使用 `_id` 實際上只是為了辨識方便，路由器根本不知道你是不是擺進了正確的 `_id`，或只是隨機的一組字串。
+
+符合上面的路由格式，就會顯示出對應的模板了，但我們還少了一段東西：路由器知道擁有這個 `_id` 的貼文就是我們要呈現的資料，可是模板卻不知道啊！該如何填補這段空缺？
+
+還好，路由器已經內建了解決方案：你可以指定一個模板的「**資料情境（data context）**」，你可以把資料情境想成一塊美味蛋糕的內餡，這塊蛋糕的外觀是由模板與排版檔組成的。
+
+![The data context.](https://book.discovermeteor.com/images/diagrams/router-diagram-2@2x.png)
+
+回到範例，我們根據從網址列取得的 `_id` 資料，去找出符合的 `Posts`。
+
+```
+Router.route('/posts/:_id', {
+  name: 'postPage',
+  data: function() { return Posts.findOne(this.params._id); }
+});
+```
+
+記得 `fineOne()` 只會回傳一筆吻合的查詢，同時也只提供比對一種參數的能力：也就是 `id`，類似這樣 `{_id: id}` （`_id` 是指資料的唯一識別碼，`id` 是變數，你必須在前面的程式想辦法讓它拿到正確的資料 `_id`）。
+
+在路由的 `data` 函數，`this` 對應著目前符合、被選取的路由，我們可以使用 `this.params` 拿到這個命名路由的各種資料。（？）
+
+### 深入理解資料情境
+
+[參考](https://www.discovermeteor.com/blog/a-guide-to-meteor-templates-data-contexts/)
+
+## 使用動態命名路由的 helper
+
+`{{pathFor 'postPage' someOtherPost}}`
+
+## 404處理
+
+1. 建立 404 模板。
+2. 在 `Router.configure` 中添加 `notFoundTemplate:`。
+3. 另建 `Router.onBeforeAction('dataNotFound', {})` 處理動態路由 404。
 
 
