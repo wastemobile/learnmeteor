@@ -22,11 +22,11 @@
 
 ## 路由：把網址對應到模板
 
-Meteor 預設就只有「模板」，你可以從模板中呼叫模板，所以事實上還是可以自己建立一般框架常見的所謂「排版檔（Layout）」，也就是只包含 `<head>` 與 `<body>`，然後 `<body>` 裏擺一個主要模板，其實就與前面製作的 `main.html` 同義。
+Meteor 採用極簡、也最彈性的方式設計「模板（Template）」，只支援三種頂層標籤（`<head>`, `<body>` 以及 `<template>`），因此模板更像是 **partials**，有寫入 `<head>` 與 `<body>` 的則接近**排版檔（Layout）**。
 
 安裝了 Iron Router 之後，這套件把 Layout + Template 的模式帶了進來。先寫好一個預設的排版檔，在 `<body>` 裡擺一個 `{{> yield}}` 特殊標籤，路由器會自動根據路由的設定、替換成對應的模板。
 
-> 重點在於：原來你可以把一個模板當成排版檔使用，但無法動態替換模板；搭配了路由器的功能，才能讓排版檔真正發揮作用。
+排版檔中可以擺放不只一個 `yield`，必須以不同的名稱區隔，像是 `{{> yield "aside"}}` 或 `{{> yield "footer"}}`，將主區塊、側邊欄或頁腳拆分開來。
 
 ![Layouts and Templates](https://book.discovermeteor.com/images/diagrams/router-diagram@2x.png)
 
