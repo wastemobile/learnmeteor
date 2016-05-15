@@ -1,3 +1,4 @@
+[![Stories in Ready](https://badge.waffle.io/wastemobile/learnmeteor.png?label=ready&title=Ready)](https://waffle.io/wastemobile/learnmeteor)
 Learn Meteor
 ============
 
